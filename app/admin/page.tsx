@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -14,9 +14,53 @@ type Product = {
   categories: { name_en: string } | null;
 };
 
+type Variant = {
+  id: string;
+  size: string;
+  color_name_en: string;
+  color_hex: string;
+  stock: number;
+};
+
 export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [variantsByProduct, setVariantsByProduct] = useState<Record<string, Variant[]>>({});
+  const [savedFlash, setSavedFlash] = useState<string | null>(null);
+
+  async function toggleStock(productId: string) {
+    if (expandedId === productId) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(productId);
+
+    if (!variantsByProduct[productId]) {
+      const { data } = await supabase
+        .from("product_variants")
+        .select("id, size, color_name_en, color_hex, stock")
+        .eq("product_id", productId);
+      setVariantsByProduct((prev) => ({ ...prev, [productId]: data || [] }));
+    }
+  }
+
+  async function updateStock(productId: string, variantId: string, newStock: number) {
+    setVariantsByProduct((prev) => ({
+      ...prev,
+      [productId]: prev[productId].map((v) => (v.id === variantId ? { ...v, stock: newStock } : v)),
+    }));
+  }
+
+  async function saveStock(variantId: string) {
+    const productVariants = Object.values(variantsByProduct).flat();
+    const variant = productVariants.find((v) => v.id === variantId);
+    if (!variant) return;
+
+    await supabase.from("product_variants").update({ stock: variant.stock }).eq("id", variantId);
+    setSavedFlash(variantId);
+    setTimeout(() => setSavedFlash(null), 1000);
+  }
 
   async function loadProducts() {
     setLoading(true);
@@ -87,7 +131,8 @@ export default function AdminDashboard() {
           </thead>
           <tbody>
             {products.map((p) => (
-              <tr key={p.id} style={{ borderBottom: "1px solid rgba(10,10,10,0.1)" }}>
+              <React.Fragment key={p.id}>
+              <tr style={{ borderBottom: "1px solid rgba(10,10,10,0.1)" }}>
                 <td style={{ padding: "14px 8px" }}>
                   {p.name_en} {p.is_new && <span style={{ fontSize: 10, color: "#8a8580" }}>(NEW)</span>}
                 </td>
@@ -113,6 +158,12 @@ export default function AdminDashboard() {
                   </button>
                 </td>
                 <td style={{ padding: "14px 8px", textAlign: "right" }}>
+                  <button
+                    onClick={() => toggleStock(p.id)}
+                    style={{ fontSize: 12, marginInlineEnd: 16, textDecoration: "underline", background: "none", border: "none", cursor: "pointer", color: "#0a0a0a" }}
+                  >
+                    Stock
+                  </button>
                   <Link href={`/admin/products/${p.id}`} style={{ fontSize: 12, marginInlineEnd: 16, textDecoration: "underline" }}>
                     Edit
                   </Link>
@@ -124,7 +175,36 @@ export default function AdminDashboard() {
                   </button>
                 </td>
               </tr>
-            ))}
+              {expandedId === p.id && (
+                <tr>
+                  <td colSpan={5} style={{ padding: "0 8px 20px", background: "#faf9f7" }}>
+                    {!variantsByProduct[p.id] ? (
+                      <div style={{ padding: 16, fontSize: 13, color: "#8a8580" }}>Loading…</div>
+                    ) : variantsByProduct[p.id].length === 0 ? (
+                      <div style={{ padding: 16, fontSize: 13, color: "#8a8580" }}>No size/color options yet.</div>
+                    ) : (
+                      <div style={{ padding: "12px 0", display: "flex", flexDirection: "column", gap: 8 }}>
+                        {variantsByProduct[p.id].map((v) => (
+                          <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13 }}>
+                            <div style={{ width: 18, height: 18, borderRadius: "50%", background: v.color_hex, border: "1px solid rgba(10,10,10,0.15)" }}></div>
+                            <span style={{ width: 100 }}>{v.color_name_en} / {v.size}</span>
+                            <input
+                              type="number"
+                              value={v.stock}
+                              onChange={(e) => updateStock(p.id, v.id, parseInt(e.target.value) || 0)}
+                              onBlur={() => saveStock(v.id)}
+                              style={{ width: 70, border: "1px solid rgba(10,10,10,0.15)", padding: "6px 8px", fontSize: 13, fontFamily: "inherit" }}
+                            />
+                            {savedFlash === v.id && <span style={{ fontSize: 11, color: "#5b6a5a" }}>Saved ✓</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
+          ))}
           </tbody>
         </table>
       )}
