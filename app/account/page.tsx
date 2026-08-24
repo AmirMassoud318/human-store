@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { useCart } from "@/lib/cart-context";
 import { supabase } from "@/lib/supabase";
 
 type OrderItem = {
@@ -32,6 +33,8 @@ const dict = {
     brandname: "Human", brandsub: "Men's Wear",
     myAccount: "My Account", loggedInAs: "Signed in as",
     signOut: "Sign Out",
+    yourCart: "Your Cart", cartEmpty: "Your bag is empty.",
+    viewCart: "View Full Bag", proceedCheckout: "Proceed to Checkout",
     orderHistory: "Order History", noOrders: "You haven't placed any orders yet.",
     startShopping: "Start Shopping",
     search: "Search", bag: "Bag",
@@ -45,6 +48,8 @@ const dict = {
     brandname: "هيومن", brandsub: "ملابس رجالي",
     myAccount: "حسابي", loggedInAs: "مسجل الدخول باسم",
     signOut: "تسجيل الخروج",
+    yourCart: "حقيبتك", cartEmpty: "حقيبتك فارغة.",
+    viewCart: "عرض الحقيبة الكاملة", proceedCheckout: "إتمام الشراء",
     orderHistory: "سجل الطلبات", noOrders: "لم تقم بأي طلب حتى الآن.",
     startShopping: "ابدأ التسوق",
     search: "بحث", bag: "الحقيبة",
@@ -56,6 +61,7 @@ const dict = {
 export default function AccountPage() {
   const [lang, setLang] = useState<"en" | "ar">("en");
   const { user, loading: authLoading, signOut } = useAuth();
+  const { items, totalPrice } = useCart();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -125,6 +131,49 @@ export default function AccountPage() {
         <p style={{ color: "#8a8580", fontSize: 14, marginBottom: 44 }}>
           {d.loggedInAs} {user.email}
         </p>
+
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 24, borderBottom: "1px solid rgba(10,10,10,0.1)", paddingBottom: 16 }}>
+          {d.yourCart}
+        </h2>
+
+        {items.length === 0 ? (
+          <div style={{ padding: "24px 0", color: "#8a8580", fontSize: 14, marginBottom: 44 }}>
+            {d.cartEmpty}
+          </div>
+        ) : (
+          <div style={{ marginBottom: 44 }}>
+            {items.map((item) => {
+              const name = lang === "en" ? item.nameEn : item.nameAr;
+              const colorName = lang === "en" ? item.colorNameEn : item.colorNameAr;
+              return (
+                <div key={item.variantId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0", borderBottom: "1px solid rgba(10,10,10,0.06)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ width: 44, height: 56, background: item.colorHex, flexShrink: 0 }}></div>
+                    <div>
+                      <div style={{ fontSize: 14 }}>{name}</div>
+                      <div style={{ fontSize: 12, color: "#8a8580" }}>
+                        {colorName} / {item.size} × {item.qty}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 13 }}>{d.priceFmt(item.price * item.qty)}</div>
+                </div>
+              );
+            })}
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 600, padding: "16px 0" }}>
+              <span>Total</span>
+              <span>{d.priceFmt(totalPrice)}</span>
+            </div>
+            <div style={{ display: "flex", gap: 12 }}>
+              <Link href="/cart" className="btn-secondary" style={{ flex: 1, textAlign: "center" }}>
+                {d.viewCart}
+              </Link>
+              <Link href="/checkout" className="btn-primary" style={{ flex: 1, textAlign: "center", border: "none" }}>
+                {d.proceedCheckout}
+              </Link>
+            </div>
+          </div>
+        )}
 
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 24, borderBottom: "1px solid rgba(10,10,10,0.1)", paddingBottom: 16 }}>
           {d.orderHistory}
