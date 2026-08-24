@@ -5,7 +5,7 @@ import { CartProvider } from "@/lib/cart-context";
 
 export const metadata: Metadata = {
   title: "Human — Men's Wear",
-  description: "For men's wear. Wear good, feel Good. Based in Rehab City, Cairo.",
+  description: "For men's wear. Wear good, feel Good. Based at El Rehab Mall 2, Cairo, Egypt.",
 };
 
 export default function RootLayout({

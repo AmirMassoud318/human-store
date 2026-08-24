@@ -2,263 +2,163 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
-import { supabase } from "@/lib/supabase";
 
 const dict = {
   en: {
     dir: "ltr", langBtn: "العربية",
+    navlinks: ["T-Shirts", "Shirts", "Pants", "Jackets"],
+    topbar: "FREE DELIVERY IN CAIRO ON ORDERS OVER 1500 EGP",
     brandname: "Human", brandsub: "Men's Wear",
-    title: "Checkout",
-    contactInfo: "Contact Information",
-    name: "Full Name", phone: "Phone Number", email: "Email (optional)",
-    shippingInfo: "Shipping Address",
-    address: "Street Address", city: "City",
-    paymentInfo: "Payment Method",
-    cod: "Cash on Delivery", codDesc: "Pay in cash when your order arrives.",
-    cardSoon: "Card Payment (coming soon)",
-    placeOrder: "Place Order",
-    placing: "Placing order…",
-    orderSummary: "Order Summary",
-    subtotal: "Subtotal", shipping: "Shipping", free: "Free", total: "Total",
+    cartTitle: "Your Bag",
+    summaryTitle: "Order Summary", subtotal: "Subtotal", shipping: "Shipping", free: "Free", total: "Total",
+    checkout: "Checkout", summaryNote: "Cash on delivery and card payment available at checkout.",
+    remove: "Remove",
     emptyMsg: "Your bag is empty.", emptyBtn: "Continue Shopping",
-    required: "Please fill in all required fields.",
-    successTitle: "Order Placed!",
-    successMsg: "Thank you for your order. We'll contact you shortly to confirm delivery details.",
-    orderNumber: "Order Number",
-    backHome: "Back to Home",
+    foottagline: "For men's wear. Wear good, feel Good. Based at El Rehab Mall 2, Cairo, Egypt.",
+    fc1: "Shop", fc1items: ["T-Shirts", "Shirts", "Pants", "Jackets"],
+    fc2: "Help", fc2items: ["Delivery", "Returns", "Size Guide", "Contact Us"],
+    fc3: "Human", fc3items: ["Our Story", "Instagram", "WhatsApp"],
+    copy: "© 2026 Human — Men's Wear. El Rehab Mall 2, Cairo, Egypt.",
+    currency: "EGP — Egyptian Pound",
+    search: "Search", account: "Account", bag: "Bag",
     priceFmt: (n: number) => `${n.toLocaleString("en-US")} EGP`,
   },
   ar: {
     dir: "rtl", langBtn: "English",
+    navlinks: ["تيشيرتات", "قمصان", "بناطيل", "جاكيتات"],
+    topbar: "توصيل مجاني داخل القاهرة للطلبات فوق ١٥٠٠ جنيه",
     brandname: "هيومن", brandsub: "ملابس رجالي",
-    title: "إتمام الشراء",
-    contactInfo: "بيانات التواصل",
-    name: "الاسم الكامل", phone: "رقم الهاتف", email: "البريد الإلكتروني (اختياري)",
-    shippingInfo: "عنوان التوصيل",
-    address: "العنوان بالتفصيل", city: "المدينة",
-    paymentInfo: "طريقة الدفع",
-    cod: "الدفع عند الاستلام", codDesc: "ادفع نقدًا عند وصول الطلب.",
-    cardSoon: "الدفع بالبطاقة (قريبًا)",
-    placeOrder: "تأكيد الطلب",
-    placing: "جارٍ تأكيد الطلب…",
-    orderSummary: "ملخص الطلب",
-    subtotal: "المجموع الفرعي", shipping: "التوصيل", free: "مجاني", total: "الإجمالي",
+    cartTitle: "حقيبتك",
+    summaryTitle: "ملخص الطلب", subtotal: "المجموع الفرعي", shipping: "التوصيل", free: "مجاني", total: "الإجمالي",
+    checkout: "إتمام الشراء", summaryNote: "الدفع عند الاستلام أو بالبطاقة متاح عند إتمام الطلب.",
+    remove: "إزالة",
     emptyMsg: "حقيبتك فارغة.", emptyBtn: "واصل التسوق",
-    required: "الرجاء ملء كل الحقول المطلوبة.",
-    successTitle: "تم تأكيد الطلب!",
-    successMsg: "شكرًا لطلبك. سنتواصل معك قريبًا لتأكيد تفاصيل التوصيل.",
-    orderNumber: "رقم الطلب",
-    backHome: "العودة للرئيسية",
+    foottagline: "لملابس الرجال. البس كويس، حس بالراحة. مقرنا في مول الرحاب 2، القاهرة.",
+    fc1: "تسوق", fc1items: ["تيشيرتات", "قمصان", "بناطيل", "جاكيتات"],
+    fc2: "مساعدة", fc2items: ["التوصيل", "الاسترجاع", "دليل المقاسات", "اتصل بنا"],
+    fc3: "Human", fc3items: ["قصتنا", "انستجرام", "واتساب"],
+    copy: "© ٢٠٢٦ Human — لملابس الرجال. مول الرحاب 2، القاهرة، مصر.",
+    currency: "جنيه مصري",
+    search: "بحث", account: "حسابي", bag: "الحقيبة",
     priceFmt: (n: number) => `${n.toLocaleString("ar-EG")} ج.م`,
   },
 };
 
-export default function CheckoutPage() {
+export default function CartPage() {
   const [lang, setLang] = useState<"en" | "ar">("en");
-  const { items, totalPrice, clearCart } = useCart();
-  const router = useRouter();
-
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    address: "",
-    city: "Cairo",
-  });
-  const [placing, setPlacing] = useState(false);
-  const [error, setError] = useState("");
-  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const { items, removeItem, updateQty, totalQty, totalPrice } = useCart();
 
   const d = dict[lang];
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-
-    if (!form.name || !form.phone || !form.address) {
-      setError(d.required);
-      return;
-    }
-
-    setPlacing(true);
-
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        customer_name: form.name,
-        customer_phone: form.phone,
-        customer_email: form.email || null,
-        shipping_address: form.address,
-        city: form.city,
-        payment_method: "cash_on_delivery",
-        payment_status: "pending",
-        order_status: "processing",
-        subtotal: totalPrice,
-        total: totalPrice,
-      })
-      .select()
-      .single();
-
-    if (orderError || !order) {
-      setError(orderError?.message || "Failed to place order.");
-      setPlacing(false);
-      return;
-    }
-
-    const orderItems = items.map((item) => ({
-      order_id: order.id,
-      product_variant_id: item.variantId,
-      product_name_en: item.nameEn,
-      product_name_ar: item.nameAr,
-      size: item.size,
-      color_name_en: item.colorNameEn,
-      unit_price: item.price,
-      quantity: item.qty,
-    }));
-
-    const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
-
-    setPlacing(false);
-
-    if (itemsError) {
-      setError(itemsError.message);
-      return;
-    }
-
-    setOrderNumber(order.id.slice(0, 8).toUpperCase());
-    clearCart();
-  }
-
-  if (orderNumber) {
-    return (
-      <div dir={d.dir} style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", maxWidth: 420, padding: 40 }}>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, marginBottom: 16 }}>
-            {d.successTitle}
-          </div>
-          <p style={{ color: "#8a8580", fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>{d.successMsg}</p>
-          <div style={{ fontSize: 13, marginBottom: 32 }}>
-            {d.orderNumber}: <strong>{orderNumber}</strong>
-          </div>
-          <Link href="/" className="btn-primary" style={{ display: "inline-block" }}>
-            {d.backHome}
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div dir={d.dir}>
-      <div className="topbar">
-        <button onClick={() => setLang(lang === "en" ? "ar" : "en")} style={{ background: "none", border: "none", color: "inherit", fontSize: 11, letterSpacing: "0.1em", cursor: "pointer" }}>
-          {d.langBtn}
-        </button>
-      </div>
+      <div className="topbar">{d.topbar}</div>
 
       <header>
-        <div className="nav" style={{ justifyContent: "center" }}>
+        <div className="nav">
           <Link href="/" className="logo-mark">
             <span className="full">{d.brandname}</span>
             <span className="sub">{d.brandsub}</span>
           </Link>
+          <nav className="nav-links">
+            <Link href="/shop">{d.navlinks[0]}</Link>
+            <Link href="/shop">{d.navlinks[1]}</Link>
+            <Link href="/shop">{d.navlinks[2]}</Link>
+            <Link href="/shop">{d.navlinks[3]}</Link>
+          </nav>
+          <div className="nav-right">
+            <button className="lang-toggle" onClick={() => setLang(lang === "en" ? "ar" : "en")}>
+              {d.langBtn}
+            </button>
+            <button className="icon-btn">{d.search}</button>
+            <button className="icon-btn">{d.account}</button>
+            <Link href="/cart" className="icon-btn">{d.bag} ({totalQty})</Link>
+          </div>
         </div>
       </header>
 
       <div className="cart-header">
-        <h1>{d.title}</h1>
+        <h1>{d.cartTitle}</h1>
       </div>
 
       <div className="cart-main">
         <div>
-          {items.length === 0 ? (
-            <div className="empty-cart">
-              <p>{d.emptyMsg}</p>
-              <Link href="/shop" className="btn-primary" style={{ display: "inline-block", width: "auto" }}>
-                {d.emptyBtn}
-              </Link>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-              <div>
-                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, marginBottom: 16 }}>
-                  {d.contactInfo}
-                </h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  <input
-                    placeholder={d.name}
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    style={{ border: "1px solid rgba(10,10,10,0.15)", padding: "13px 14px", fontSize: 14, fontFamily: "inherit" }}
-                  />
-                  <input
-                    placeholder={d.phone}
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    style={{ border: "1px solid rgba(10,10,10,0.15)", padding: "13px 14px", fontSize: 14, fontFamily: "inherit" }}
-                  />
-                  <input
-                    placeholder={d.email}
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    style={{ border: "1px solid rgba(10,10,10,0.15)", padding: "13px 14px", fontSize: 14, fontFamily: "inherit" }}
-                  />
-                </div>
+          <div className="cart-list">
+            {items.length === 0 ? (
+              <div className="empty-cart">
+                <p>{d.emptyMsg}</p>
+                <Link href="/shop" className="btn-primary" style={{ display: "inline-block", width: "auto" }}>
+                  {d.emptyBtn}
+                </Link>
               </div>
-
-              <div>
-                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, marginBottom: 16 }}>
-                  {d.shippingInfo}
-                </h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  <input
-                    placeholder={d.address}
-                    value={form.address}
-                    onChange={(e) => setForm({ ...form, address: e.target.value })}
-                    style={{ border: "1px solid rgba(10,10,10,0.15)", padding: "13px 14px", fontSize: 14, fontFamily: "inherit" }}
-                  />
-                  <input
-                    placeholder={d.city}
-                    value={form.city}
-                    onChange={(e) => setForm({ ...form, city: e.target.value })}
-                    style={{ border: "1px solid rgba(10,10,10,0.15)", padding: "13px 14px", fontSize: 14, fontFamily: "inherit" }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, marginBottom: 16 }}>
-                  {d.paymentInfo}
-                </h3>
-                <div style={{ border: "1px solid var(--black)", padding: 16, fontSize: 13, marginBottom: 10 }}>
-                  <strong>{d.cod}</strong>
-                  <div style={{ color: "#8a8580", fontSize: 12, marginTop: 4 }}>{d.codDesc}</div>
-                </div>
-                <div style={{ border: "1px solid rgba(10,10,10,0.1)", padding: 16, fontSize: 13, color: "#c9c5bd" }}>
-                  {d.cardSoon}
-                </div>
-              </div>
-
-              {error && <div style={{ fontSize: 13, color: "#b33" }}>{error}</div>}
-
-              <button type="submit" className="btn-primary" disabled={placing} style={{ border: "none" }}>
-                {placing ? d.placing : d.placeOrder}
-              </button>
-            </form>
-          )}
+            ) : (
+              items.map((item) => {
+                const name = lang === "en" ? item.nameEn : item.nameAr;
+                const colorName = lang === "en" ? item.colorNameEn : item.colorNameAr;
+                return (
+                  <div className="cart-item" key={item.variantId}>
+                    <div className="cart-item-img" style={{ background: item.colorHex }}></div>
+                    <div className="cart-item-info">
+                      <div className="name">{name}</div>
+                      <div className="variant">{colorName} / {item.size}</div>
+                      <div className="price">{d.priceFmt(item.price)}</div>
+                    </div>
+                    <div className="cart-item-actions">
+                      <button className="remove-link" onClick={() => removeItem(item.variantId)}>{d.remove}</button>
+                      <div className="qty-control">
+                        <button onClick={() => updateQty(item.variantId, item.qty - 1)}>−</button>
+                        <span>{item.qty}</span>
+                        <button onClick={() => updateQty(item.variantId, item.qty + 1)}>+</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
 
-        {items.length > 0 && (
-          <div className="summary">
-            <h3>{d.orderSummary}</h3>
-            <div className="summary-row"><span>{d.subtotal}</span><span>{d.priceFmt(totalPrice)}</span></div>
-            <div className="summary-row"><span>{d.shipping}</span><span>{d.free}</span></div>
-            <div className="summary-row total"><span>{d.total}</span><span>{d.priceFmt(totalPrice)}</span></div>
-          </div>
-        )}
+        <div className="summary">
+          <h3>{d.summaryTitle}</h3>
+          <div className="summary-row"><span>{d.subtotal}</span><span>{d.priceFmt(totalPrice)}</span></div>
+          <div className="summary-row"><span>{d.shipping}</span><span>{d.free}</span></div>
+          <div className="summary-row total"><span>{d.total}</span><span>{d.priceFmt(totalPrice)}</span></div>
+
+          <Link href="/checkout" className="btn-primary" style={{ display: "block", textAlign: "center", pointerEvents: items.length === 0 ? "none" : "auto", opacity: items.length === 0 ? 0.4 : 1 }}>
+            {d.checkout}
+          </Link>
+          <p className="summary-note">{d.summaryNote}</p>
+        </div>
       </div>
+
+      <footer>
+        <div className="footer-grid">
+          <div className="footer-col">
+            <div className="footer-brand">
+              <div className="footer-logo">{d.brandname}</div>
+              <div className="footer-logo-sub">{d.brandsub}</div>
+            </div>
+            <p className="footer-tagline">{d.foottagline}</p>
+          </div>
+          <div className="footer-col">
+            <h4>{d.fc1}</h4>
+            {d.fc1items.map((item, i) => <a href="#" key={i}>{item}</a>)}
+          </div>
+          <div className="footer-col">
+            <h4>{d.fc2}</h4>
+            {d.fc2items.map((item, i) => <a href="#" key={i}>{item}</a>)}
+          </div>
+          <div className="footer-col">
+            <h4>{d.fc3}</h4>
+            {d.fc3items.map((item, i) => <a href="#" key={i}>{item}</a>)}
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <div>{d.copy}</div>
+          <div>{d.currency}</div>
+        </div>
+      </footer>
     </div>
   );
 }
