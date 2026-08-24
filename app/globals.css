@@ -146,7 +146,7 @@ html[dir="rtl"] .section-head h2{ font-family:'Tajawal', sans-serif; font-weight
 .section-head a{ font-size:12px; letter-spacing:0.1em; text-transform:uppercase; border-bottom:1px solid var(--black); padding-bottom:3px; }
 
 .cat-grid{
-  display:grid; grid-template-columns:repeat(4, 1fr); gap:2px;
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:2px;
 }
 .cat-card{
   position:relative; aspect-ratio:3/4; overflow:hidden;

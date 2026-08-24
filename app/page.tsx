@@ -14,6 +14,13 @@ type Product = {
   product_images: { image_url: string; position: number }[];
 };
 
+type Category = {
+  id: string;
+  name_en: string;
+  name_ar: string;
+  slug: string;
+};
+
 const dict = {
   en: {
     dir: "ltr", langBtn: "العربية",
@@ -74,6 +81,7 @@ export default function HomePage() {
   const [lang, setLang] = useState<"en" | "ar">("en");
   const { totalQty } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const d = dict[lang];
 
   useEffect(() => {
@@ -87,6 +95,12 @@ export default function HomePage() {
       setProducts(data || []);
     }
     loadProducts();
+
+    async function loadCategories() {
+      const { data } = await supabase.from("categories").select("id, name_en, name_ar, slug");
+      setCategories(data || []);
+    }
+    loadCategories();
   }, []);
 
   return (
@@ -100,10 +114,11 @@ export default function HomePage() {
             <span className="sub">{d.brandsub}</span>
           </div>
           <nav className="nav-links">
-            <Link href="/shop">{d.navlinks[0]}</Link>
-            <Link href="/shop">{d.navlinks[1]}</Link>
-            <Link href="/shop">{d.navlinks[2]}</Link>
-            <Link href="/shop">{d.navlinks[3]}</Link>
+            {categories.map((c) => (
+              <Link key={c.id} href={`/shop?category=${c.slug}`}>
+                {lang === "en" ? c.name_en : c.name_ar}
+              </Link>
+            ))}
           </nav>
           <div className="nav-right">
             <button className="lang-toggle" onClick={() => setLang(lang === "en" ? "ar" : "en")}>
@@ -133,10 +148,12 @@ export default function HomePage() {
           <Link href="/shop">{d.viewall}</Link>
         </div>
         <div className="cat-grid">
-          <Link href="/shop" className="cat-card"><div className="ph-bg"></div><div className="cat-label">{d.cat1}</div></Link>
-          <Link href="/shop" className="cat-card"><div className="ph-bg"></div><div className="cat-label">{d.cat2}</div></Link>
-          <Link href="/shop" className="cat-card"><div className="ph-bg"></div><div className="cat-label">{d.cat3}</div></Link>
-          <Link href="/shop" className="cat-card"><div className="ph-bg"></div><div className="cat-label">{d.cat4}</div></Link>
+          {categories.map((c) => (
+            <Link key={c.id} href={`/shop?category=${c.slug}`} className="cat-card">
+              <div className="ph-bg"></div>
+              <div className="cat-label">{lang === "en" ? c.name_en : c.name_ar}</div>
+            </Link>
+          ))}
         </div>
       </section>
 

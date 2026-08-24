@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart-context";
 
@@ -12,7 +13,15 @@ type Product = {
   price: number;
   compare_at_price: number | null;
   is_new: boolean;
+  category_id: string;
   product_images: { image_url: string; position: number }[];
+};
+
+type Category = {
+  id: string;
+  name_en: string;
+  name_ar: string;
+  slug: string;
 };
 
 const dict = {
@@ -69,21 +78,42 @@ const grads = [
 ];
 
 export default function ShopPage() {
+  return (
+    <Suspense fallback={null}>
+      <ShopPageContent />
+    </Suspense>
+  );
+}
+
+function ShopPageContent() {
+  const searchParams = useSearchParams();
+  const categorySlug = searchParams.get("category");
+
   const [lang, setLang] = useState<"en" | "ar">("en");
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "new" | "sale">("all");
   const [sort, setSort] = useState<"featured" | "low" | "high">("featured");
   const { totalQty } = useCart();
 
   const d = dict[lang];
+  const activeCategory = categories.find((c) => c.slug === categorySlug);
+
+  useEffect(() => {
+    async function loadCategories() {
+      const { data } = await supabase.from("categories").select("id, name_en, name_ar, slug");
+      setCategories(data || []);
+    }
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     async function loadProducts() {
       setLoading(true);
       const { data, error } = await supabase
         .from("products")
-        .select("id, name_en, name_ar, price, compare_at_price, is_new, product_images(image_url, position)")
+        .select("id, name_en, name_ar, price, compare_at_price, is_new, category_id, product_images(image_url, position)")
         .eq("is_active", true);
 
       if (!error && data) {
@@ -95,6 +125,7 @@ export default function ShopPage() {
   }, []);
 
   let displayed = products.filter((p) => {
+    if (activeCategory && p.category_id !== activeCategory.id) return false;
     if (filter === "new") return p.is_new;
     if (filter === "sale") return p.compare_at_price !== null;
     return true;
@@ -114,10 +145,11 @@ export default function ShopPage() {
             <span className="sub">{d.brandsub}</span>
           </Link>
           <nav className="nav-links">
-            <Link href="/shop">{d.navlinks[0]}</Link>
-            <Link href="/shop">{d.navlinks[1]}</Link>
-            <Link href="/shop">{d.navlinks[2]}</Link>
-            <Link href="/shop">{d.navlinks[3]}</Link>
+            {categories.map((c) => (
+              <Link key={c.id} href={`/shop?category=${c.slug}`}>
+                {lang === "en" ? c.name_en : c.name_ar}
+              </Link>
+            ))}
           </nav>
           <div className="nav-right">
             <button className="lang-toggle" onClick={() => setLang(lang === "en" ? "ar" : "en")}>
@@ -136,7 +168,7 @@ export default function ShopPage() {
       </div>
 
       <div className="cat-header">
-        <h1>{d.catTitle}</h1>
+        <h1>{activeCategory ? (lang === "en" ? activeCategory.name_en : activeCategory.name_ar) : d.catTitle}</h1>
         <p>{d.catDesc}</p>
       </div>
 
