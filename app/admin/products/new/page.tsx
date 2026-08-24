@@ -7,6 +7,16 @@ import { supabase } from "@/lib/supabase";
 
 type Category = { id: string; name_en: string };
 
+type VariantRow = {
+  size: string;
+  colorNameEn: string;
+  colorNameAr: string;
+  colorHex: string;
+  stock: string;
+};
+
+const commonSizes = ["S", "M", "L", "XL", "XXL"];
+
 const inputStyle: React.CSSProperties = {
   border: "1px solid rgba(10,10,10,0.15)",
   padding: "12px 14px",
@@ -43,6 +53,9 @@ export default function NewProductPage() {
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [variants, setVariants] = useState<VariantRow[]>([
+    { size: "M", colorNameEn: "", colorNameAr: "", colorHex: "#0a0a0a", stock: "10" },
+  ]);
 
   useEffect(() => {
     async function loadCategories() {
@@ -67,6 +80,18 @@ export default function NewProductPage() {
   function removeImage(index: number) {
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function addVariantRow() {
+    setVariants((prev) => [...prev, { size: "M", colorNameEn: "", colorNameAr: "", colorHex: "#0a0a0a", stock: "10" }]);
+  }
+
+  function removeVariantRow(index: number) {
+    setVariants((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateVariantRow(index: number, field: keyof VariantRow, value: string) {
+    setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, [field]: value } : v)));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -123,6 +148,20 @@ export default function NewProductPage() {
           position: i,
         });
       }
+    }
+
+    // salviamo le taglie/colori disponibili per questo prodotto
+    const validVariants = variants.filter((v) => v.colorNameEn.trim() !== "");
+    for (const v of validVariants) {
+      await supabase.from("product_variants").insert({
+        product_id: newProduct.id,
+        size: v.size,
+        color_name_en: v.colorNameEn,
+        color_name_ar: v.colorNameAr || v.colorNameEn,
+        color_hex: v.colorHex,
+        stock: parseInt(v.stock) || 0,
+        sku: `${newProduct.id}-${v.size}-${v.colorHex}`,
+      });
     }
 
     setSaving(false);
@@ -262,6 +301,72 @@ export default function NewProductPage() {
           />
           Mark as "New"
         </label>
+
+        <div>
+          <label style={labelStyle}>Sizes & Colors Available</label>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {variants.map((v, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "80px 1fr 1fr 50px 70px 28px", gap: 8, alignItems: "center" }}>
+                <select
+                  value={v.size}
+                  onChange={(e) => updateVariantRow(i, "size", e.target.value)}
+                  style={{ ...inputStyle, padding: "10px 8px", fontSize: 13 }}
+                >
+                  {commonSizes.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+                <input
+                  placeholder="Color (English)"
+                  value={v.colorNameEn}
+                  onChange={(e) => updateVariantRow(i, "colorNameEn", e.target.value)}
+                  style={{ ...inputStyle, padding: "10px 8px", fontSize: 13 }}
+                />
+                <input
+                  placeholder="Color (Arabic)"
+                  value={v.colorNameAr}
+                  onChange={(e) => updateVariantRow(i, "colorNameAr", e.target.value)}
+                  style={{ ...inputStyle, padding: "10px 8px", fontSize: 13, direction: "rtl" }}
+                />
+                <input
+                  type="color"
+                  value={v.colorHex}
+                  onChange={(e) => updateVariantRow(i, "colorHex", e.target.value)}
+                  style={{ width: 40, height: 38, border: "1px solid rgba(10,10,10,0.15)", padding: 2, cursor: "pointer" }}
+                />
+                <input
+                  type="number"
+                  placeholder="Stock"
+                  value={v.stock}
+                  onChange={(e) => updateVariantRow(i, "stock", e.target.value)}
+                  style={{ ...inputStyle, padding: "10px 8px", fontSize: 13 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeVariantRow(i)}
+                  style={{ background: "none", border: "none", color: "#b33", fontSize: 18, cursor: "pointer" }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={addVariantRow}
+            style={{
+              marginTop: 10,
+              background: "none",
+              border: "1px dashed rgba(10,10,10,0.25)",
+              padding: "8px 16px",
+              fontSize: 12,
+              cursor: "pointer",
+              color: "#8a8580",
+            }}
+          >
+            + Add another size/color
+          </button>
+        </div>
 
         {error && <div style={{ fontSize: 13, color: "#b33" }}>{error}</div>}
 
