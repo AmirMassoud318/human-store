@@ -248,7 +248,16 @@ function ShopPageContent() {
           </div>
           <div className="footer-col">
             <h4>{d.fc3}</h4>
-            {d.fc3items.map((item, i) => <a href="#" key={i}>{item}</a>)}
+            {d.fc3items.map((item, i) => (
+              <a
+                key={i}
+                href={i === 1 ? "https://www.instagram.com/hu_man204/" : "#"}
+                target={i === 1 ? "_blank" : undefined}
+                rel={i === 1 ? "noopener noreferrer" : undefined}
+              >
+                {item}
+              </a>
+            ))}
           </div>
         </div>
         <div className="footer-bottom">
