@@ -6,12 +6,12 @@ export default function SplashScreen({ onDone }: { onDone: () => void }) {
   const [phase, setPhase] = useState<"loading" | "reveal" | "lifting" | "done">("loading");
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("reveal"), 2200);
-    const t2 = setTimeout(() => setPhase("lifting"), 3000);
+    const t1 = setTimeout(() => setPhase("reveal"), 2400);
+    const t2 = setTimeout(() => setPhase("lifting"), 3200);
     const t3 = setTimeout(() => {
       setPhase("done");
       onDone();
-    }, 3700);
+    }, 3950);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -36,60 +36,33 @@ export default function SplashScreen({ onDone }: { onDone: () => void }) {
       }}
     >
       <div style={{ textAlign: "center" }}>
-        <svg
-          width="150"
-          height="190"
-          viewBox="0 0 150 190"
-          fill="none"
-          style={{
-            opacity: phase === "loading" ? 1 : 1,
-            animation: "hangerFadeIn 0.6s ease-out both",
-          }}
-        >
-          {/* gancio */}
-          <g
-            style={{
-              transformOrigin: "75px 22px",
-              animation: "hangerSway 3.4s ease-in-out infinite 0.6s",
-            }}
-          >
-            <circle cx="75" cy="14" r="7" stroke="#c9bfae" strokeWidth="2" fill="none" />
-            <path
-              d="M75 21 L75 32 L28 62 Q20 67 24 75 L126 75 Q130 67 122 62 L75 32"
-              stroke="#c9bfae"
-              strokeWidth="2"
-              fill="none"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-          </g>
-
-          {/* maglietta */}
-          <g
+        <div style={{ animation: "float 3.2s ease-in-out infinite 1.35s" }}>
+          <svg
+            width="220"
+            height="260"
+            viewBox="0 0 220 260"
+            fill="none"
             style={{
               opacity: 0,
-              animation: "shirtDrop 0.7s ease-out 0.55s both",
+              overflow: "visible",
+              animation: "shirtFall 1.05s cubic-bezier(0.32, 1.5, 0.6, 1) 0.15s both",
             }}
           >
             <path
-              d="M50 78
-                 L50 68
-                 Q50 60 60 58
-                 L62 57
-                 Q75 66 88 57
-                 L90 58
-                 Q100 60 100 68
-                 L100 78
-                 L112 84
-                 L104 100
-                 L100 96
-                 L100 168
-                 Q100 172 96 172
-                 L54 172
-                 Q50 172 50 168
-                 L50 96
-                 L46 100
-                 L38 84
+              d="M92 70
+                 Q110 82 128 70
+                 L148 79
+                 L180 98
+                 Q186 102 180 108
+                 L154 124
+                 L154 222
+                 Q154 230 146 230
+                 L74 230
+                 Q66 230 66 222
+                 L66 124
+                 L40 108
+                 Q34 102 40 98
+                 L72 79
                  Z"
               stroke="#fafafa"
               strokeWidth="2"
@@ -97,30 +70,31 @@ export default function SplashScreen({ onDone }: { onDone: () => void }) {
               strokeLinejoin="round"
             />
             <text
-              x="75"
-              y="118"
+              x="110"
+              y="168"
               textAnchor="middle"
               fill="#fafafa"
               style={{
                 fontFamily: "'Playfair Display', serif",
-                fontSize: 19,
-                letterSpacing: "0.02em",
+                fontSize: 24,
+                opacity: 0,
+                animation: "textExpand 0.9s ease-out 0.95s both",
               }}
             >
               Human
             </text>
-          </g>
-        </svg>
+          </svg>
+        </div>
 
         <div
           style={{
-            marginTop: 18,
+            marginTop: 22,
             fontSize: 10,
             letterSpacing: "0.32em",
             color: "#8a8580",
             textTransform: "uppercase",
             opacity: 0,
-            animation: "textFadeIn 0.6s ease-out 1.3s both",
+            animation: "textFadeIn 0.6s ease-out 1.55s both",
           }}
         >
           Men's Wear
@@ -128,17 +102,21 @@ export default function SplashScreen({ onDone }: { onDone: () => void }) {
       </div>
 
       <style>{`
-        @keyframes hangerFadeIn {
-          from { opacity: 0; transform: scale(0.85); }
-          to { opacity: 1; transform: scale(1); }
+        @keyframes shirtFall {
+          0% { opacity: 0; transform: translateY(-220px) rotate(-12deg) scale(0.92); }
+          55% { opacity: 1; }
+          68% { transform: translateY(16px) rotate(4deg) scale(1.02); }
+          82% { transform: translateY(-8px) rotate(-1.5deg) scale(1); }
+          92% { transform: translateY(3px) rotate(0.5deg); }
+          100% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
         }
-        @keyframes hangerSway {
-          0%, 100% { transform: rotate(-2deg); }
-          50% { transform: rotate(2deg); }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
         }
-        @keyframes shirtDrop {
-          from { opacity: 0; transform: translateY(-14px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes textExpand {
+          from { opacity: 0; letter-spacing: 0.35em; }
+          to { opacity: 1; letter-spacing: 0.01em; }
         }
         @keyframes textFadeIn {
           from { opacity: 0; }
