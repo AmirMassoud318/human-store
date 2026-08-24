@@ -1,69 +1,211 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useCart } from "@/lib/cart-context";
+import { supabase } from "@/lib/supabase";
+
+type Product = {
+  id: string;
+  name_en: string;
+  name_ar: string;
+  price: number;
+  is_new: boolean;
+  product_images: { image_url: string; position: number }[];
+};
+
+const dict = {
+  en: {
+    dir: "ltr", langBtn: "العربية",
+    navlinks: ["T-Shirts", "Shirts", "Pants", "Jackets"],
+    topbar: "FREE DELIVERY IN CAIRO ON ORDERS OVER 1500 EGP",
+    brandname: "Human", brandsub: "Men's Wear",
+    herotag: "New Season — Autumn / Winter",
+    herotitle: ["Wear Good,", "Feel Good."],
+    herotext: "Considered menswear for Cairo. Clean lines, honest fabrics, made to move through your day without a second thought.",
+    heroCta: "Shop The Collection",
+    shopby: "Shop by Category", viewall: "View All",
+    cat1: "T-Shirts", cat2: "Shirts", cat3: "Pants", cat4: "Jackets",
+    newarrivals: "New Arrivals",
+    storyeyebrow: "Rehab City, Cairo",
+    storytitle: "A men's wear label built on quiet confidence.",
+    storytext: "Human began as a single rail in Rehab City with one idea: clothes that let you feel put together without trying too hard. Every piece is chosen for fabric, fit, and how it wears after the tenth washing — not just the first.",
+    foottagline: "For men's wear. Wear good, feel Good. Based in Rehab City, Cairo.",
+    fc1: "Shop", fc1items: ["T-Shirts", "Shirts", "Pants", "Jackets"],
+    fc2: "Help", fc2items: ["Delivery", "Returns", "Size Guide", "Contact Us"],
+    fc3: "Human", fc3items: ["Our Story", "Instagram", "WhatsApp"],
+    copy: "© 2026 Human — Men's Wear. Rehab City, Cairo, Egypt.",
+    currency: "EGP — Egyptian Pound",
+    search: "Search", account: "Account", bag: "Bag",
+  },
+  ar: {
+    dir: "rtl", langBtn: "English",
+    navlinks: ["تيشيرتات", "قمصان", "بناطيل", "جاكيتات"],
+    topbar: "توصيل مجاني داخل القاهرة للطلبات فوق ١٥٠٠ جنيه",
+    brandname: "هيومن", brandsub: "ملابس رجالي",
+    herotag: "الموسم الجديد — خريف / شتاء",
+    herotitle: ["البس كويس،", "حس بالراحة."],
+    herotext: "ملابس رجالي مدروسة للقاهرة. خطوط نظيفة وأقمشة صادقة، مصممة لتواكب يومك دون تفكير زائد.",
+    heroCta: "تسوق التشكيلة",
+    shopby: "تسوق حسب الفئة", viewall: "عرض الكل",
+    cat1: "تيشيرتات", cat2: "قمصان", cat3: "بناطيل", cat4: "جاكيتات",
+    newarrivals: "وصل حديثًا",
+    storyeyebrow: "ريحاب سيتي، القاهرة",
+    storytitle: "علامة ملابس رجالية بثقة هادئة.",
+    storytext: "بدأت Human كرف واحد في ريحاب سيتي بفكرة بسيطة: ملابس تخليك حاسس إنك مرتب من غير مجهود زايد. كل قطعة بنختارها على أساس القماش والمقاس، وإزاي هتبقى شكلها بعد الغسلة العاشرة — مش بس الأولى.",
+    foottagline: "لملابس الرجال. البس كويس، حس بالراحة. مقرنا في ريحاب سيتي، القاهرة.",
+    fc1: "تسوق", fc1items: ["تيشيرتات", "قمصان", "بناطيل", "جاكيتات"],
+    fc2: "مساعدة", fc2items: ["التوصيل", "الاسترجاع", "دليل المقاسات", "اتصل بنا"],
+    fc3: "Human", fc3items: ["قصتنا", "انستجرام", "واتساب"],
+    copy: "© ٢٠٢٦ Human — لملابس الرجال. ريحاب سيتي، القاهرة، مصر.",
+    currency: "جنيه مصري",
+    search: "بحث", account: "حسابي", bag: "الحقيبة",
+  },
+};
+
+const grads = [
+  "linear-gradient(150deg,#1a1a1a,#3a3a3a)",
+  "linear-gradient(150deg,#d6cfc0,#a89d86)",
+  "linear-gradient(150deg,#26241f,#0a0a0a)",
+  "linear-gradient(150deg,#c2b8a3,#8f8570)",
+];
+
+export default function HomePage() {
+  const [lang, setLang] = useState<"en" | "ar">("en");
+  const { totalQty } = useCart();
+  const [products, setProducts] = useState<Product[]>([]);
+  const d = dict[lang];
+
+  useEffect(() => {
+    async function loadProducts() {
+      const { data } = await supabase
+        .from("products")
+        .select("id, name_en, name_ar, price, is_new, product_images(image_url, position)")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(4);
+      setProducts(data || []);
+    }
+    loadProducts();
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div dir={d.dir}>
+      <div className="topbar">{d.topbar}</div>
+
+      <header>
+        <div className="nav">
+          <div className="logo-mark">
+            <span className="full">{d.brandname}</span>
+            <span className="sub">{d.brandsub}</span>
+          </div>
+          <nav className="nav-links">
+            <Link href="/shop">{d.navlinks[0]}</Link>
+            <Link href="/shop">{d.navlinks[1]}</Link>
+            <Link href="/shop">{d.navlinks[2]}</Link>
+            <Link href="/shop">{d.navlinks[3]}</Link>
+          </nav>
+          <div className="nav-right">
+            <button className="lang-toggle" onClick={() => setLang(lang === "en" ? "ar" : "en")}>
+              {d.langBtn}
+            </button>
+            <button className="icon-btn">{d.search}</button>
+            <button className="icon-btn">{d.account}</button>
+            <Link href="/cart" className="icon-btn">{d.bag} ({totalQty})</Link>
+          </div>
+        </div>
+      </header>
+
+      <section className="hero">
+        <div className="hero-inner">
+          <div className="hero-tag">{d.herotag}</div>
+          <h1>
+            {d.herotitle[0]}<br />{d.herotitle[1]}
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+          <p>{d.herotext}</p>
+          <Link href="/shop" className="btn-primary">{d.heroCta}</Link>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <section className="cat-strip">
+        <div className="section-head">
+          <h2>{d.shopby}</h2>
+          <Link href="/shop">{d.viewall}</Link>
         </div>
-      </main>
+        <div className="cat-grid">
+          <Link href="/shop" className="cat-card"><div className="ph-bg"></div><div className="cat-label">{d.cat1}</div></Link>
+          <Link href="/shop" className="cat-card"><div className="ph-bg"></div><div className="cat-label">{d.cat2}</div></Link>
+          <Link href="/shop" className="cat-card"><div className="ph-bg"></div><div className="cat-label">{d.cat3}</div></Link>
+          <Link href="/shop" className="cat-card"><div className="ph-bg"></div><div className="cat-label">{d.cat4}</div></Link>
+        </div>
+      </section>
+
+      <section className="products">
+        <div className="section-head">
+          <h2>{d.newarrivals}</h2>
+          <Link href="/shop">{d.viewall}</Link>
+        </div>
+        <div className="product-grid">
+          {products.map((p, i) => {
+            const name = lang === "en" ? p.name_en : p.name_ar;
+            const sortedImages = [...(p.product_images || [])].sort((a, b) => a.position - b.position);
+            const mainImage = sortedImages[0]?.image_url;
+            return (
+              <Link href={`/product/${p.id}`} className="product-card" key={p.id}>
+                <div
+                  className="product-img"
+                  style={mainImage ? { backgroundImage: `url(${mainImage})`, backgroundSize: "cover", backgroundPosition: "center" } : { background: grads[i % grads.length] }}
+                >
+                  {p.is_new && <div className="tag-new">{lang === "en" ? "NEW" : "جديد"}</div>}
+                </div>
+                <div className="product-name">{name}</div>
+                <div className="product-price">
+                  {lang === "en" ? `${p.price.toLocaleString("en-US")} EGP` : `${p.price.toLocaleString("ar-EG")} ج.م`}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="story">
+        <div className="story-inner">
+          <div className="story-visual"><span>HU</span></div>
+          <div className="story-text">
+            <div className="eyebrow">{d.storyeyebrow}</div>
+            <h3>{d.storytitle}</h3>
+            <p>{d.storytext}</p>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <div className="footer-grid">
+          <div className="footer-col">
+            <div className="footer-brand">
+              <div className="footer-logo">{d.brandname}</div>
+              <div className="footer-logo-sub">{d.brandsub}</div>
+            </div>
+            <p className="footer-tagline">{d.foottagline}</p>
+          </div>
+          <div className="footer-col">
+            <h4>{d.fc1}</h4>
+            {d.fc1items.map((item, i) => <a href="#" key={i}>{item}</a>)}
+          </div>
+          <div className="footer-col">
+            <h4>{d.fc2}</h4>
+            {d.fc2items.map((item, i) => <a href="#" key={i}>{item}</a>)}
+          </div>
+          <div className="footer-col">
+            <h4>{d.fc3}</h4>
+            {d.fc3items.map((item, i) => <a href="#" key={i}>{item}</a>)}
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <div>{d.copy}</div>
+          <div>{d.currency}</div>
+        </div>
+      </footer>
     </div>
   );
 }
