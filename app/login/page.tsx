@@ -17,6 +17,7 @@ const dict = {
     signUpLink: "Sign up", signInLink: "Sign in",
     loading: "Please wait…",
     alreadyRegisteredMsg: "An account with this email address already exists. Please sign in instead.",
+    invalidCredentialsMsg: "The email or password you entered is incorrect. If you don't have an account yet, please sign up below.",
     checkEmailTitle: "Check Your Inbox",
     checkEmailMsg: "We've sent a confirmation link to your email address. Please verify it to activate your account before signing in.",
     backToSignIn: "Back to Sign In",
@@ -32,6 +33,7 @@ const dict = {
     signUpLink: "أنشئ حساب", signInLink: "سجّل الدخول",
     loading: "لحظة من فضلك…",
     alreadyRegisteredMsg: "يوجد حساب مسجّل بالفعل بهذا البريد الإلكتروني. يرجى تسجيل الدخول بدلاً من ذلك.",
+    invalidCredentialsMsg: "البريد الإلكتروني أو كلمة المرور غير صحيحة. إذا لم يكن لديك حساب بعد، يمكنك إنشاء واحد أدناه.",
     checkEmailTitle: "تفقّد بريدك الإلكتروني",
     checkEmailMsg: "لقد أرسلنا رابط تأكيد إلى بريدك الإلكتروني. يرجى التحقق منه لتفعيل حسابك قبل تسجيل الدخول.",
     backToSignIn: "العودة لتسجيل الدخول",
@@ -61,7 +63,7 @@ export default function LoginPage() {
       const result = await signIn(email, password);
       setLoading(false);
       if (result.error) {
-        setError(result.error);
+        setError(d.invalidCredentialsMsg);
         return;
       }
       router.push("/account");
