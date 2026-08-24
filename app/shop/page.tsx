@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
 
 type Product = {
   id: string;
@@ -35,11 +36,11 @@ const dict = {
     filterAll: "All", filterNew: "New", filterSale: "Sale",
     sortFeatured: "Featured", sortLow: "Price: Low to High", sortHigh: "Price: High to Low",
     itemsLabel: "items", newTag: "NEW", saleTag: "SALE",
-    foottagline: "For men's wear. Wear good, feel Good. Based in Rehab City, Cairo.",
+    foottagline: "For men's wear. Wear good, feel Good. Based at El Rehab Mall 2, Cairo, Egypt.",
     fc1: "Shop", fc1items: ["T-Shirts", "Shirts", "Pants", "Jackets"],
     fc2: "Help", fc2items: ["Delivery", "Returns", "Size Guide", "Contact Us"],
     fc3: "Human", fc3items: ["Our Story", "Instagram", "WhatsApp"],
-    copy: "© 2026 Human — Men's Wear. Rehab City, Cairo, Egypt.",
+    copy: "© 2026 Human — Men's Wear. El Rehab Mall 2, Cairo, Egypt.",
     currency: "EGP — Egyptian Pound",
     search: "Search", account: "Account", bag: "Bag",
     loading: "Loading products…", empty: "No products found.",
@@ -55,11 +56,11 @@ const dict = {
     filterAll: "الكل", filterNew: "جديد", filterSale: "تخفيضات",
     sortFeatured: "مميز", sortLow: "السعر: من الأقل", sortHigh: "السعر: من الأعلى",
     itemsLabel: "قطعة", newTag: "جديد", saleTag: "تخفيض",
-    foottagline: "لملابس الرجال. البس كويس، حس بالراحة. مقرنا في ريحاب سيتي، القاهرة.",
+    foottagline: "لملابس الرجال. البس كويس، حس بالراحة. مقرنا في مول الرحاب 2، القاهرة.",
     fc1: "تسوق", fc1items: ["تيشيرتات", "قمصان", "بناطيل", "جاكيتات"],
     fc2: "مساعدة", fc2items: ["التوصيل", "الاسترجاع", "دليل المقاسات", "اتصل بنا"],
     fc3: "Human", fc3items: ["قصتنا", "انستجرام", "واتساب"],
-    copy: "© ٢٠٢٦ Human — لملابس الرجال. ريحاب سيتي، القاهرة، مصر.",
+    copy: "© ٢٠٢٦ Human — لملابس الرجال. مول الرحاب 2، القاهرة، مصر.",
     currency: "جنيه مصري",
     search: "بحث", account: "حسابي", bag: "الحقيبة",
     loading: "جارٍ تحميل المنتجات…", empty: "لا توجد منتجات.",
@@ -96,6 +97,7 @@ function ShopPageContent() {
   const [filter, setFilter] = useState<"all" | "new" | "sale">("all");
   const [sort, setSort] = useState<"featured" | "low" | "high">("featured");
   const { totalQty } = useCart();
+  const { user } = useAuth();
 
   const d = dict[lang];
   const activeCategory = categories.find((c) => c.slug === categorySlug);
@@ -156,7 +158,7 @@ function ShopPageContent() {
               {d.langBtn}
             </button>
             <button className="icon-btn">{d.search}</button>
-            <button className="icon-btn">{d.account}</button>
+            <Link href={user ? "/account" : "/login"} className="icon-btn">{d.account}</Link>
             <Link href="/cart" className="icon-btn">{d.bag} ({totalQty})</Link>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 
 type Product = {
@@ -80,6 +81,7 @@ const grads = [
 export default function HomePage() {
   const [lang, setLang] = useState<"en" | "ar">("en");
   const { totalQty } = useCart();
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const d = dict[lang];
@@ -125,7 +127,7 @@ export default function HomePage() {
               {d.langBtn}
             </button>
             <button className="icon-btn">{d.search}</button>
-            <button className="icon-btn">{d.account}</button>
+            <Link href={user ? "/account" : "/login"} className="icon-btn">{d.account}</Link>
             <Link href="/cart" className="icon-btn">{d.bag} ({totalQty})</Link>
           </div>
         </div>

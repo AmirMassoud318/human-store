@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
 
 const dict = {
   en: {
@@ -48,6 +49,7 @@ const dict = {
 export default function CartPage() {
   const [lang, setLang] = useState<"en" | "ar">("en");
   const { items, removeItem, updateQty, totalQty, totalPrice } = useCart();
+  const { user } = useAuth();
 
   const d = dict[lang];
 
@@ -72,7 +74,7 @@ export default function CartPage() {
               {d.langBtn}
             </button>
             <button className="icon-btn">{d.search}</button>
-            <button className="icon-btn">{d.account}</button>
+            <Link href={user ? "/account" : "/login"} className="icon-btn">{d.account}</Link>
             <Link href="/cart" className="icon-btn">{d.bag} ({totalQty})</Link>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
 
 type Product = {
   id: string;
@@ -79,6 +80,7 @@ export default function ProductPage() {
   const params = useParams();
   const id = params.id as string;
   const { addItem, totalQty } = useCart();
+  const { user } = useAuth();
 
   const [lang, setLang] = useState<"en" | "ar">("en");
   const [product, setProduct] = useState<Product | null>(null);
@@ -184,7 +186,7 @@ export default function ProductPage() {
               {d.langBtn}
             </button>
             <button className="icon-btn">{d.search}</button>
-            <button className="icon-btn">{d.account}</button>
+            <Link href={user ? "/account" : "/login"} className="icon-btn">{d.account}</Link>
             <Link href="/cart" className="icon-btn">{d.bag} ({totalQty})</Link>
           </div>
         </div>
