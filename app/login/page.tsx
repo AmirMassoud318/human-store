@@ -16,6 +16,10 @@ const dict = {
     noAccount: "Don't have an account?", haveAccount: "Already have an account?",
     signUpLink: "Sign up", signInLink: "Sign in",
     loading: "Please wait…",
+    alreadyRegisteredMsg: "An account with this email address already exists. Please sign in instead.",
+    checkEmailTitle: "Check Your Inbox",
+    checkEmailMsg: "We've sent a confirmation link to your email address. Please verify it to activate your account before signing in.",
+    backToSignIn: "Back to Sign In",
   },
   ar: {
     dir: "rtl", langBtn: "English",
@@ -27,6 +31,10 @@ const dict = {
     noAccount: "ليس لديك حساب؟", haveAccount: "لديك حساب بالفعل؟",
     signUpLink: "أنشئ حساب", signInLink: "سجّل الدخول",
     loading: "لحظة من فضلك…",
+    alreadyRegisteredMsg: "يوجد حساب مسجّل بالفعل بهذا البريد الإلكتروني. يرجى تسجيل الدخول بدلاً من ذلك.",
+    checkEmailTitle: "تفقّد بريدك الإلكتروني",
+    checkEmailMsg: "لقد أرسلنا رابط تأكيد إلى بريدك الإلكتروني. يرجى التحقق منه لتفعيل حسابك قبل تسجيل الدخول.",
+    backToSignIn: "العودة لتسجيل الدخول",
   },
 };
 
@@ -38,6 +46,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkEmailSent, setCheckEmailSent] = useState(false);
 
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const router = useRouter();
@@ -48,8 +57,19 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    const result = mode === "signin" ? await signIn(email, password) : await signUp(email, password, name);
+    if (mode === "signin") {
+      const result = await signIn(email, password);
+      setLoading(false);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      router.push("/account");
+      return;
+    }
 
+    // mode === "signup"
+    const result = await signUp(email, password, name);
     setLoading(false);
 
     if (result.error) {
@@ -57,7 +77,43 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/account");
+    if (result.alreadyRegistered) {
+      setError(d.alreadyRegisteredMsg);
+      return;
+    }
+
+    setCheckEmailSent(true);
+  }
+
+  if (checkEmailSent) {
+    return (
+      <div dir={d.dir} style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--white)" }}>
+        <div style={{ width: 380, padding: 20, textAlign: "center" }}>
+          <div style={{ marginBottom: 24 }}>
+            <Link href="/" className="logo-mark" style={{ display: "inline-flex" }}>
+              <span className="full">{d.brandname}</span>
+              <span className="sub">{d.brandsub}</span>
+            </Link>
+          </div>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, marginBottom: 16 }}>
+            {d.checkEmailTitle}
+          </h1>
+          <p style={{ fontSize: 14, color: "#3a3a3a", lineHeight: 1.7, marginBottom: 32 }}>
+            {d.checkEmailMsg}
+          </p>
+          <button
+            onClick={() => {
+              setCheckEmailSent(false);
+              setMode("signin");
+            }}
+            className="btn-secondary"
+            style={{ width: "100%" }}
+          >
+            {d.backToSignIn}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
