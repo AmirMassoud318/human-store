@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
+import SplashScreen from "@/components/SplashScreen";
 
 type Product = {
   id: string;
@@ -84,7 +85,16 @@ export default function HomePage() {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [showSplash, setShowSplash] = useState(false);
   const d = dict[lang];
+
+  useEffect(() => {
+    const seen = sessionStorage.getItem("human-splash-seen");
+    if (!seen) {
+      setShowSplash(true);
+      sessionStorage.setItem("human-splash-seen", "true");
+    }
+  }, []);
 
   useEffect(() => {
     async function loadProducts() {
@@ -106,7 +116,9 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div dir={d.dir}>
+    <>
+      {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+      <div dir={d.dir}>
       <div className="topbar">{d.topbar}</div>
 
       <header>
@@ -225,6 +237,7 @@ export default function HomePage() {
           <div>{d.currency}</div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
