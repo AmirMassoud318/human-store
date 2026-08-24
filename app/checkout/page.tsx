@@ -24,6 +24,7 @@ const dict = {
     subtotal: "Subtotal", shipping: "Shipping", free: "Free", total: "Total",
     emptyMsg: "Your bag is empty.", emptyBtn: "Continue Shopping",
     required: "Please fill in all required fields.",
+    outOfStockError: "Sorry, \"{name}\" no longer has enough stock available. Please update your bag.",
     successTitle: "Order Placed!",
     successMsg: "Thank you for your order. We'll contact you shortly to confirm delivery details.",
     orderNumber: "Order Number",
@@ -47,6 +48,7 @@ const dict = {
     subtotal: "المجموع الفرعي", shipping: "التوصيل", free: "مجاني", total: "الإجمالي",
     emptyMsg: "حقيبتك فارغة.", emptyBtn: "واصل التسوق",
     required: "الرجاء ملء كل الحقول المطلوبة.",
+    outOfStockError: "عذرًا، الكمية المتاحة من \"{name}\" لم تعد كافية. يرجى تحديث حقيبتك.",
     successTitle: "تم تأكيد الطلب!",
     successMsg: "شكرًا لطلبك. سنتواصل معك قريبًا لتأكيد تفاصيل التوصيل.",
     orderNumber: "رقم الطلب",
@@ -84,6 +86,21 @@ export default function CheckoutPage() {
 
     setPlacing(true);
 
+    // verifichiamo che lo stock sia ancora sufficiente per ogni articolo
+    for (const item of items) {
+      const { data: variant } = await supabase
+        .from("product_variants")
+        .select("stock")
+        .eq("id", item.variantId)
+        .single();
+
+      if (!variant || variant.stock < item.qty) {
+        setError(d.outOfStockError.replace("{name}", item.nameEn));
+        setPlacing(false);
+        return;
+      }
+    }
+
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
@@ -120,13 +137,29 @@ export default function CheckoutPage() {
 
     const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
 
-    setPlacing(false);
-
     if (itemsError) {
+      setPlacing(false);
       setError(itemsError.message);
       return;
     }
 
+    // scaliamo lo stock per ogni articolo acquistato
+    for (const item of items) {
+      const { data: variant } = await supabase
+        .from("product_variants")
+        .select("stock")
+        .eq("id", item.variantId)
+        .single();
+
+      if (variant) {
+        await supabase
+          .from("product_variants")
+          .update({ stock: Math.max(0, variant.stock - item.qty) })
+          .eq("id", item.variantId);
+      }
+    }
+
+    setPlacing(false);
     setOrderNumber(order.id.slice(0, 8).toUpperCase());
     clearCart();
   }
